@@ -12,7 +12,8 @@
     "secrets:local": "echo \"ANTHROPIC_API_KEY=$(doppler secrets get ANTHROPIC_API_KEY --plain)\" > .dev.vars",
     "secrets:push": "doppler secrets get ANTHROPIC_API_KEY --plain | wrangler secret put ANTHROPIC_API_KEY",
     "preview": "vite build && npm run secrets:local && wrangler dev; rm -f .dev.vars",
-    "deploy": "vite build && wrangler deploy"
+    "deploy": "vite build && wrangler deploy",
+    "eval": "node eval/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

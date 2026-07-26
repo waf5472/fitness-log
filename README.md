@@ -103,7 +103,7 @@ Prefer not to configure Access? Set an `OWNER_TOKEN` secret instead and send
 npm run dev      # UI only, always in local/visitor mode (no Worker behind it)
 npm run preview  # full stack: Vite build + Worker + D1 + secrets
 npm run deploy   # ship it
-npm test         # 45 unit tests, no network required
+npm test         # 51 unit tests, no network required
 ```
 
 Set `DEV_OWNER_EMAIL` in `.dev.vars` to exercise owner mode locally, since
@@ -143,23 +143,56 @@ intake is being under-recorded, not that your metabolism is unusual.
 
 ## The model call
 
-One call per entry, in `worker/index.js`:
+One call per entry. Structured outputs (`output_config.format`) guarantee
+schema-valid JSON, so there is no brittle text parsing and the failure modes are
+about *content* — a missed ingredient, a botched unit conversion — rather than
+malformed output.
+
+The model is set in `worker/models.js`:
 
 ```js
-const MODEL  = "claude-opus-5";
-const EFFORT = "low";
+export const MODEL = "claude-haiku-4-5";
 ```
 
-Structured outputs (`output_config.format`) guarantee schema-valid JSON, so
-there is no brittle text parsing. Extraction is a small, well-specified task,
-hence low effort. Both constants are one-line swaps — `claude-haiku-4-5` is the
-obvious downgrade if per-parse cost on the public demo becomes a concern.
+Extraction is small, well specified, and schema-constrained, so it starts at the
+cheapest tier. Change that one line to move up.
 
-`test/parse-schema.test.js` validates the schema against the structured-output
-constraints at test time rather than discovering a 400 in production, and asserts
-that the activity list in the prompt still matches the activities `exercise.js`
-implements — otherwise the two drift and unmatched activities silently collapse
-to a generic MET value.
+`effort` lives in the same table rather than in a constant, because it is **not
+universally supported** — Opus 5 and Sonnet 5 accept it, Haiku 4.5 rejects it
+with a 400. `modelRequestOptions()` omits the key entirely for models that
+refuse it, and `test/models.test.js` asserts that, so swapping the model can't
+quietly break every parse in production.
+
+### Choosing a model with `npm run eval`
+
+Don't guess — measure. `eval/cases.js` holds 18 labelled entries covering the
+things that actually go wrong: unit conversions (`2h10m` → 130, `10k` → 6.21 mi,
+2000 yd → 1.14 mi), fractions (`1/4 cup` → 0.25, "half an avocado" → 0.5),
+splitting one sentence into several records, meal-slot inference, refusing to
+invent a quantity for "some almonds", and the discipline rule below.
+
+```bash
+npm run eval                       # all three candidates, ~$0.15 total
+npm run eval -- claude-haiku-4-5   # just one
+npm run eval -- --verbose          # show every failure with the raw output
+npm run eval -- --runs 3           # repeat, to see run-to-run variance
+```
+
+It reports pass rate, latency, cost per parse, and projected annual cost at six
+entries a day, issuing the exact same request the Worker does.
+
+**The failure that matters most is `est_kcal` discipline.** A model that
+helpfully computes calories for ordinary foods routes around the food table
+entirely, and results stop being reproducible — which is the whole point of the
+design. Two cases test it directly from both sides: ordinary foods must leave
+`est_kcal` null, and branded items ("Clif bar", "Starbucks latte") must set it.
+Weigh that column more heavily than the total.
+
+`test/parse-schema.test.js` separately validates the schema against the
+structured-output constraints at test time rather than discovering a 400 in
+production, and asserts that the activity list in the prompt still matches the
+activities `exercise.js` implements — otherwise the two drift and unmatched
+activities silently collapse to a generic MET value.
 
 Anonymous callers get 40 parses per IP per day; the owner is not limited. It is
 the only endpoint that costs money, so it is the only one that needs a throttle.
@@ -175,6 +208,7 @@ by over weeks; not a clinical instrument.
 
 ```
 worker/index.js         Worker: SPA, /api/parse, /api/db/*, /project.json
+worker/models.js        model choice + per-model request shape
 worker/parse-schema.js  the model contract — JSON schema + system prompt
 migrations/             D1 schema
 src/lib/foods.js        136-food nutrition table
@@ -184,5 +218,6 @@ src/lib/exercise.js     ACSM equations + MET table
 src/lib/goals.js        BMR/TDEE, targets, streaks, weight trend
 src/lib/store.js        local vs cloud storage, demo seed
 src/components/         Log, Trends, Saved, Profile, ParsePreview, Charts
-test/                   45 unit tests
+test/                   51 unit tests
+eval/                   labelled extraction cases + model scorer
 ```

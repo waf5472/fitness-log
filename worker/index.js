@@ -18,11 +18,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { PARSE_SCHEMA, SYSTEM_PROMPT } from "./parse-schema.js";
 import project from "../project.json";
 
-// Extraction is a small, well-specified task, so it runs at low effort. Swap
-// this one constant to trade accuracy for cost; nothing else depends on it.
-const MODEL = "claude-opus-5";
-const EFFORT = "low";
-const MAX_TOKENS = 8000;
+import { MODEL, modelRequestOptions } from "./models.js";
 
 const MAX_INPUT_CHARS = 2000;
 const MAX_PARSES_PER_DAY = 40; // per IP, for anonymous visitors
@@ -127,15 +123,16 @@ async function handleParse(request, env) {
   }
 
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  const { max_tokens, ...outputOptions } = modelRequestOptions();
 
   let response;
   try {
     response = await client.messages.create({
       model: MODEL,
-      max_tokens: MAX_TOKENS,
+      max_tokens,
       system: SYSTEM_PROMPT,
       output_config: {
-        effort: EFFORT,
+        ...outputOptions,
         format: { type: "json_schema", schema: PARSE_SCHEMA },
       },
       messages: [
