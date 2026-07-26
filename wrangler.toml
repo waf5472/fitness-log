@@ -1,0 +1,32 @@
+# Non-secret config only. The Anthropic key is NEVER stored here —
+# it is set as a Worker secret via Doppler or `wrangler secret put`.
+
+name = "fitness-log"
+main = "worker/index.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Custom domain — portfolio apps live at <project-name>.wesley-fletcher.com
+routes = [{ pattern = "fitness-log.wesley-fletcher.com", custom_domain = true }]
+
+# Serve the Vite build, with SPA fallback so client routing works.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# The owner's long-term corpus. Real tables, real indexes, real SQL — visitors
+# never touch this (they run entirely in localStorage). Create with:
+#   npx wrangler d1 create fitness-log-db
+# then paste the returned database_id below and run `npm run db:remote`.
+[[d1_databases]]
+binding = "DB"
+database_name = "fitness-log-db"
+database_id = "PASTE_DATABASE_ID_HERE"
+
+# Ephemeral counters only (per-IP LLM rate limits). KV is the right tool for
+# TTL'd throwaway keys and the wrong tool for the log itself. Create with:
+#   npx wrangler kv namespace create RATE_KV
+[[kv_namespaces]]
+binding = "RATE_KV"
+id = "PASTE_KV_NAMESPACE_ID_HERE"

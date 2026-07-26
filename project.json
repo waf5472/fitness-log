@@ -1,0 +1,7 @@
+{
+  "name": "Fitness Log",
+  "description": "I built this to track what I eat and how I train without spending two minutes tapping through a food database. You type a sentence — \"hiked 6.2mi in 2h10m, 1400ft gain\" or \"parfait with 6oz raspberries, 1 cup Greek yogurt, 1 tsp chia\" — and an LLM turns it into structured fields. It never computes a calorie: a committed USDA-derived food table and the ACSM metabolic equations do that, so the numbers are reproducible and you can see the work. Tracks intake, training volume, and weight against your goals. Try it right here — your data stays in your browser.",
+  "link": "https://fitness-log.wesley-fletcher.com",
+  "repo": "https://github.com/waf5472/fitness-log",
+  "tags": ["Claude Code", "Cloudflare Worker", "D1", "React", "JS"]
+}

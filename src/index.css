@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-neutral-950 text-neutral-100 antialiased;
+  font-feature-settings: "tnum";
+}
+
+/* Numbers in tables and stat tiles should not shift width as they change. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
