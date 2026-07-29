@@ -100,11 +100,30 @@ Prefer not to configure Access? Set an `OWNER_TOKEN` secret instead and send
 ### 4. Run it
 
 ```bash
-npm run dev      # UI only, always in local/visitor mode (no Worker behind it)
-npm run preview  # full stack: Vite build + Worker + D1 + secrets
+npm run dev      # UI on :5173, HMR — local/visitor mode, no key needed
+npm run dev:api  # Worker on :8787 — run alongside `npm run dev` for a live /api
+npm run preview  # full stack off the production build, Worker serves everything
 npm run deploy   # ship it
 npm test         # 51 unit tests, no network required
 ```
+
+**Just want to look at it?** `npm run dev` and open http://localhost:5173. The
+whole UI works — logging, charts, trends, goals — against localStorage, which is
+also exactly what a visitor to the deployed site gets. No API key, no database,
+no Cloudflare account.
+
+**Want the parse box to work too?** It calls the Worker, so run `npm run dev:api`
+in a second terminal; Vite proxies `/api` to it (see `vite.config.js`). That
+needs a real key in `.dev.vars`:
+
+```bash
+echo 'ANTHROPIC_API_KEY=sk-ant-...' > .dev.vars   # gitignored
+npm run db:local                                   # once, for the D1 tables
+```
+
+`npm run secrets:local` will generate that file from Doppler instead, if this
+repo is set up against a project holding the key. It leaves a hand-written
+`.dev.vars` alone and fails loudly rather than writing an empty key.
 
 Set `DEV_OWNER_EMAIL` in `.dev.vars` to exercise owner mode locally, since
 there is no Access in front of `wrangler dev`.

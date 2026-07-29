@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "wrangler dev --port 8787",
     "build": "vite build",
-    "test": "node --test 'test/*.test.js'",
+    "test": "node --test test/*.test.js",
     "db:local": "wrangler d1 migrations apply fitness-log-db --local",
     "db:remote": "wrangler d1 migrations apply fitness-log-db --remote",
-    "secrets:local": "echo \"ANTHROPIC_API_KEY=$(doppler secrets get ANTHROPIC_API_KEY --plain)\" > .dev.vars",
+    "secrets:local": "bash scripts/dev-vars.sh",
     "secrets:push": "doppler secrets get ANTHROPIC_API_KEY --plain | wrangler secret put ANTHROPIC_API_KEY",
-    "preview": "vite build && npm run secrets:local && wrangler dev; rm -f .dev.vars",
+    "preview": "vite build && npm run secrets:local && wrangler dev",
     "deploy": "vite build && wrangler deploy",
     "eval": "node eval/run.mjs"
   },
