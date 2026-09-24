@@ -1,0 +1,7 @@
+{
+  "name": "Leftovers",
+  "description": "Type what is in your fridge, pick a few tags, and get three recipes you can actually make tonight. Recipes come from a self-built index of schema.org data crawled from 30+ cooking sites — only ingredient lists and links are stored, never the recipe text. Swipe right to keep one in your Cookbook; the Spicerack holds the staples every recipe may assume you have.",
+  "link": "https://leftovers.wesley-fletcher.com",
+  "repo": "https://github.com/waf5472/leftovers",
+  "tags": ["Claude Code", "Cloudflare Worker", "D1", "React", "JS", "Crawler"]
+}

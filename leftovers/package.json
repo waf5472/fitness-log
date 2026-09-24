@@ -1,0 +1,35 @@
+{
+  "name": "leftovers",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "wrangler dev --port 8787",
+    "build": "vite build && cp project.json dist/project.json",
+    "test": "node --test test/*.test.js",
+    "db:local": "wrangler d1 migrations apply leftovers-db --local",
+    "db:remote": "wrangler d1 migrations apply leftovers-db --remote",
+    "secrets:local": "bash scripts/dev-vars.sh",
+    "secrets:push": "doppler secrets get ANTHROPIC_API_KEY --plain | wrangler secret put ANTHROPIC_API_KEY",
+    "crawl": "node scripts/crawl.mjs",
+    "preview": "npm run build && npm run secrets:local && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "dev:local": "node scripts/dev-server.mjs",
+    "cron:local": "node scripts/cron-local.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "lucide-react": "^0.383.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.3.1",
+    "wrangler": "^3.78.0"
+  }
+}

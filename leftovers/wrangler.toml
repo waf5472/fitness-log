@@ -1,0 +1,35 @@
+# Non-secret config only. ANTHROPIC_API_KEY and OWNER_TOKEN are Worker secrets
+# (Doppler or `wrangler secret put`), never stored here.
+
+name = "leftovers"
+main = "worker/index.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [{ pattern = "leftovers.wesley-fletcher.com", custom_domain = true }]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# The recipe index (shared, read by everyone) plus the owner's Cookbook,
+# Spicerack and swipe history. Visitors keep those three in localStorage.
+# Create with:
+#   npx wrangler d1 create leftovers-db
+# then paste the returned database_id below and run `npm run db:remote`.
+[[d1_databases]]
+binding = "DB"
+database_name = "leftovers-db"
+database_id = "PASTE_DATABASE_ID_HERE"
+
+# The crawler runs as a cron: every 5 minutes it pulls a small batch of queued
+# URLs (the free plan caps subrequests and CPU per invocation, so batches stay
+# small and the index fills over days, not minutes). Sundays it re-reads every
+# source's sitemap to pick up new recipes.
+[triggers]
+crons = ["*/5 * * * *", "17 3 * * 0"]
+
+[vars]
+CRAWL_BATCH = "10"
+CRAWL_USER_AGENT = "leftovers-crawler/0.1 (+https://leftovers.wesley-fletcher.com; polite, metadata only)"

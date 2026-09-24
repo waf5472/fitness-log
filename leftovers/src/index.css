@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-neutral-950 text-neutral-100 antialiased;
+  overscroll-behavior-y: none;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Swipe cards must not let the browser claim horizontal pans as page scrolls. */
+.swipe-surface {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}

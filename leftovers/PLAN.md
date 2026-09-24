@@ -1,9 +1,7 @@
 # Leftovers — product and build plan
 
-> Status: DRAFT, pending answers to the clarifying questions at the bottom.
-> This file is parked here because the `waf5472/leftovers` repo could not be
-> created from the session (GitHub App lacks repo-create permission). Move it
-> to that repo's root as `PLAN.md` once the repo exists.
+> Status: DECISIONS LOCKED 2026-09-24, Phases 0–4 implemented in this repo.
+> See README.md for how it runs; this file is the why.
 
 ## 1. Product in one paragraph
 
@@ -195,30 +193,24 @@ first real week on ingredient normalization and the matching query before
 touching the swipe UI. Use Edamam as a fallback only when the index returns
 fewer than three candidates. Ship Phase 3 as the public MVP.
 
-## 10. Open questions (answer before build)
+## 10. Decisions (answered 2026-09-24)
 
-1. **Corpus posture**: own crawl + link-out (recommended), API-only
-   (Edamam/Spoonacular, fast to ship, rate-capped, no control), or open
-   datasets only (Wikibooks + Food.com, legally cleanest, older content)?
-   And: is link-out acceptable, or do you want instructions rendered in-app?
-2. **Toggle semantics**: when "Requires additional ingredients" is OFF, is
-   zero-missing strict, or is "missing only Spicerack-class items" fine?
-   When ON, what is the cap: 1, 3, unlimited with a sort?
-3. **Tag logic**: are diet tags hard filters and cuisine/macro tags soft
-   boosts (recommended), or is everything a hard AND? Can a user pick two
-   cuisines (Italian OR Asian)?
-4. **Meals × servings**: is "3 meals, 4 servings" three distinct recipes
-   each scaled to 4, or one recipe that yields 12? Should the three
-   suggestions avoid sharing a scarce ingredient (one pack of chicken can't
-   feed all three)?
-5. **Rerun and left-swipe memory**: does Rerun replace all three or only the
-   ones not yet swiped? Is a left swipe permanent suppression, a 30-day
-   snooze, or session-only?
-6. **Accounts**: multi-user with email magic-link, or single-owner app with
-   a visitor mode in localStorage like fitness-log?
-7. **Input fidelity**: ingredient presence only ("chicken, rice, spinach")
-   or quantities too ("2 chicken thighs")? Quantities enable servings math
-   but triple the input friction.
-8. **LLM budget**: OK to use Claude Haiku for crawl-time ingredient
-   normalization (cents/month), and optionally at query time to parse a
-   free-text dump like "half a bag of spinach and some leftover rice"?
+| # | Question | Decision | Where it lives |
+|---|----------|----------|----------------|
+| 1 | Corpus posture | Own crawl of sitemaps + JSON-LD, metadata only, link out. | `worker/crawl/*`, `migrations/0001_init.sql` |
+| 2 | Toggle semantics | **Off** = strict: every non-optional ingredient is in your list or Spicerack. **On** = up to 3 missing, listed on the card. Off degrades visibly (banner) instead of silently flipping. Default on, because off is sparse until the index is large. | `shared/rank.js` `deal()`, `QueryForm` |
+| 3 | Tag logic | Diet = hard filter (SQL). Cuisine/macro = score boost. Multiple cuisines are OR. | `worker/match.js`, `shared/rank.js` |
+| 4 | Meals × servings | 3 meals × 4 = three *different* recipes each scaled to 4 (12 plates). Dealt recipes avoid sharing a hero protein. | `pickDiverse()`, `shared/scale.js` |
+| 5 | Rerun / left swipe | Rerun replaces only undecided cards. Left swipe is permanent (`swipes` table / localStorage), with a one-click "forget them". | `App.jsx` `onRerun`, `store.js` |
+| 6 | Accounts | Same as fitness-log: owner via Cloudflare Access / OWNER_TOKEN → D1; visitors → localStorage. | `worker/index.js` `ownerEmail()` |
+| 7 | Input fidelity | Presence only. Free text is parsed client-side with the crawler's normalizer. | `IngredientInput.jsx` |
+| 8 | LLM budget | Haiku 4.5 for unresolved-phrase mapping at admin/cron time; upgrade path is `worker/models.js`. No per-query LLM. | `worker/crawl/llm.js` |
+
+## 11. What is not built yet
+
+- Cron on the Workers **free** plan is CPU-capped (10 ms/invocation). `CRAWL_BATCH=10` may need to drop to 3–5, or the plan goes to $5/mo. Bulk seeding is designed to run from a laptop for this reason.
+- No image proxy: cards hot-link source images with `referrerPolicy="no-referrer"`. Some CDNs will 403; the card hides the image and carries on. A Cloudflare Images / cache-through proxy is the v2 fix.
+- Macro tags without nutrition data are heuristics and are labelled `*`.
+- Gluten-free is only ever *confirmed*, never inferred.
+- Servings scaling shows a factor; it does not rewrite quantities (we do not store them).
+- No fitness-log hook yet (cooked recipe → calorie entry). Noted, not built.
